@@ -8,16 +8,16 @@ type: context
 
 The reference repository is the Hand Contracting showcase. Its review workflow is the source. Its product rules are not. Where a workflow document and a script disagree, the kit follows the script and records the disagreement in this file.
 
-Read on 2026-10-13 at reference `6bd1f7c`. That tip is past `1ed74c0`. No commit after `1ed74c0` changes `docs/workflow/adversarial-commit.md`, `scripts/adversary/`, or `azure-pipelines/adversary.yml`. Those files already include `d3792c5`, `490af3e`, and `1ed74c0`. The kit follows them as they stand.
+The kit was read on 2026-10-13 at reference `6bd1f7c`. That tip is past `1ed74c0` and already includes `d3792c5`, `490af3e`, and `1ed74c0`. A later edit removed classification from the pre-commit hook. The kit follows `.githooks/pre-commit` and `scripts/adversary/classify-run.sh` after that edit. Product rules stay citations.
 
 The reference paths below are citations. They are not install inputs.
 
 ## Keep in every project
 
-- The implementer does not load the report, hunter, or collate roles, and does not write routing or verdict files. Source: `.cursor/rules/adversarial-commit.mdc`, `.cursor/skills/adversarial-commit/SKILL.md`.
-- The pre-commit hook classifies the staged diff, writes `.git/adversary-routing/<tree>.json` from `git write-tree`, and warns on high risk. It does not run hunters and it does not block an ordinary commit. Source: `.githooks/pre-commit`, `docs/workflow/adversarial-commit.md` (loop step 1).
-- A staged change to the gate is refused before any bypass is considered. A human commits it by skipping the hook. `ADVERSARY_BYPASS` only fills the log field on an ordinary commit. Source: `.githooks/pre-commit`, `.cursor/skills/adversarial-commit/SKILL.md`.
-- The merge check classifies the full pull-request diff again. A local routing file is not an input. Source: `scripts/adversary/classify-run.sh`, `azure-pipelines/adversary.yml`.
+- The implementer does not load the report, hunter, or collate roles, does not classify the diff, and does not write verdict files. Source: `.cursor/rules/adversarial-commit.mdc`, `.cursor/skills/adversarial-commit/SKILL.md`.
+- The pre-commit hook refuses a staged change to the review machinery and then exits success. An ordinary commit proceeds. The value is that this lock stops the commit from being created, and the pull-request job cannot, because the job runs only after the commit exists. A human commits that change by skipping the hook once. Source: `.githooks/pre-commit`, `docs/workflow/adversarial-commit.md`.
+- The commit-message hook appends an issue trailer when exactly one issue is in progress. Scope and defects load that trailer from the commit messages. The job does not write the trailer. Source: `.githooks/prepare-commit-msg`, `scripts/adversary/bead-context.py`, `scripts/adversary/run-agents.sh`.
+- The merge check classifies the full pull-request diff. The hook does not. A local routing file is not an input. Source: `scripts/adversary/classify-run.sh`, `azure-pipelines/adversary.yml`, `.githooks/pre-commit`.
 - Routing is deterministic. `decision_source` is `policy-v1.2`. The same diff yields the same risk, signals, and hunters. A long diff is not required for high risk. A docs-only change with no signal stays low. Source: `scripts/adversary/collate-decision.py` (`route_risk`, `POLICY`), `docs/workflow/adversarial-commit.md`.
 - Deterministic gates run before hunters, including on a low decision. A gate failure fails the job before any hunter starts. Source: `scripts/adversary/deterministic-gates.sh`, `azure-pipelines/adversary.yml`.
 - Selected hunters run at the same time. Each sees the ask, the gate report, and its own slice. None sees another hunter's report. Source: `scripts/adversary/run-agents.sh`.
@@ -36,9 +36,13 @@ The reference paths below are citations. They are not install inputs.
 - The agent process keeps a real home directory. An empty home makes a file read hang for about 16 minutes. Source: `scripts/adversary/run-cursor-agent.sh`.
 - After three failed early reviews, stop and report. Do not queue another run. A pass resets the count. The same tree and ask are not sent twice. Source: `scripts/adversary/request-review.sh`.
 
+## What left the hook
+
+- Classification, a local routing file, a high-risk warning, and a bypass note left the pre-commit hook. The pull-request job already classifies the full diff and writes its own routing decision. `scripts/adversary/classify-run.sh` computes that decision from the pull-request diff. `scripts/adversary/request-review.sh` and `azure-pipelines/adversary.yml` do not read a hook routing file or a bypass variable. The hook no longer classifies. Source: `.githooks/pre-commit`, `scripts/adversary/classify-run.sh`, `scripts/adversary/request-review.sh`, `azure-pipelines/adversary.yml`.
+
 ## Where the running code won
 
-- The first paragraph of `docs/workflow/adversarial-commit.md` says the hook accepts a commit only on a unanimous pass. The hook and loop step 1 do not. The kit follows the hook.
+- The opening paragraph of `docs/workflow/adversarial-commit.md` now matches the hook. The hook refuses a staged gate change and does not accept a commit based on a unanimous hunter pass. That pass is the job's collated verdict in `scripts/adversary/check-verdict.sh`. Source: `.githooks/pre-commit`, `docs/workflow/adversarial-commit.md`, `scripts/adversary/check-verdict.sh`.
 - The module docstring of `scripts/adversary/collate-decision.py` says a pass needs every registered hunter to be satisfied and to report no majors. `decide` uses the selected blocking hunters and evidenced majors, and it does not read `askSatisfied`. The kit follows `decide`.
 - `docs/adversarial-review-agent-contract.md` names deployment, compatibility, performance, and compliance specialists, and a model orchestrator. The registry does not include them. Deployment and migration signals select `security` and `defects`. The kit does not add those specialists.
 - That contract's finding schema (confidence, blocking flag, categories) is not what `report_errors` accepts. The kit uses the report object the script validates.

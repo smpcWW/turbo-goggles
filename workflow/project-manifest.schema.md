@@ -33,12 +33,12 @@ The normative match rules are [routing-policy.md](routing-policy.md). This file 
 | `product_root` | yes | Default `src/`. |
 | `hunter_paths` | yes | Subject prefixes for each hunter. |
 | `defects_behavior_paths` | yes | Extra runtime files defects must see. |
-| `gate_paths` | yes | Paths the classify hook refuses until a human commits them. |
+| `gate_paths` | yes | Paths the pre-commit hook refuses until a human commits them by skipping the hook once. |
 | `fixer_identity` | yes | Name and email used for one commit only when the checkout has no identity. |
 | `kit_revision` | yes | Full git SHA of the kit that was copied. |
 | `optional_signals` | yes | `true` or `false` for each optional signal. Default `true`. |
 
-`issue_tracker`, when set, has `trailer` (a format string containing `{id}`), `id_pattern`, `list_in_progress` (a command that prints the in-progress ids), and `data_dir` (a directory omitted from routing and from hunter slices). The classify hook's commit-message companion writes the trailer only when that command returns exactly one id. Several ids are not guessed. One format a project may record is `Bead: {id}` with a `data_dir` for that tracker. Leave the slot `null` when the project has no tracker.
+`issue_tracker`, when set, has `trailer` (a format string containing `{id}`), `id_pattern`, `list_in_progress` (a command that prints the in-progress ids), and `data_dir` (a directory omitted from routing and from hunter slices). The commit-message hook writes the trailer only when that command returns exactly one id. Several ids are not guessed. One format a project may record is `Bead: {id}` with a `data_dir` for that tracker. Leave the slot `null` when the project has no tracker.
 
 `gates.forbidden_imports` entries have `path`, `pattern`, and `message`. Copy only rules the target already enforces.
 

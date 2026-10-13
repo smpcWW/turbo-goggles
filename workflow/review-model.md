@@ -1,6 +1,6 @@
 ---
 title: Review model
-description: The adversarial loop from implementer through classify, gates, hunters, collate, and bounded fix.
+description: The merge check classifies, then runs gates, hunters, collate, and a bounded fix. The hook only locks the review machinery.
 type: plan
 ---
 
@@ -11,14 +11,13 @@ The implementer does not approve its own work. Hunters review one ask. Collate c
 ## Loop
 
 1. The implementer stages the change and commits. The session loads [roles/implementer.md](../roles/implementer.md) only.
-2. The classify hook reads the staged diff, writes `.git/adversary-routing/<tree>.json`, and appends `.git/adversary-routing.log`. `<tree>` is `git write-tree` of the index. A high decision prints a warning. The hook does not run hunters and does not block an ordinary commit.
-3. A staged path listed in the manifest `gate_paths` is refused. A human commits that change by skipping the hook once. `ADVERSARY_BYPASS` records a reason on an ordinary commit. It does not authorize a gate-path commit.
-4. Before classify, the job resets tracked files to `HEAD` and deletes untracked files. Ignored files stay, including installed dependency directories. A reused work directory would otherwise let a later add publish leftover edits. The merge check then classifies the full pull-request diff against the default branch again. It writes a new routing decision in the job workspace. It does not read `.git/adversary-routing/`.
-5. Deterministic gates run next, including when the decision is low. A gate failure fails the job before any hunter starts. The publish step still runs. The fixer finds no verdict and does not call an agent.
-6. When the decision is high, the selected hunters run at the same time. Each receives the ask, the gate report, and its own diff slice. None receives another hunter's report.
-7. Collate runs the comparison in [roles/collate.md](../roles/collate.md). It does not receive the diff. A failed comparison fails the job.
-8. The bounded fixer runs after collate even when collate failed. The editing agent follows [roles/fixer.md](../roles/fixer.md). Checkout cleaning, the affected-test command, and the commit are the job's procedure in Bounded fix below. A skip exits success and leaves a failed verdict failed.
-9. The job publishes the routing decision, and the verdict and fix report when those files exist, including when hunters stayed idle.
+2. The pre-commit hook refuses a staged path listed in the manifest `gate_paths`, then exits success. It does not classify. A human commits a gate change by skipping the hook once. When `issue_tracker` is not null, the commit-message hook appends the trailer when exactly one issue is in progress. The job reads that trailer from the commit messages and does not write it. The gate lock below specifies both hooks.
+3. Before classify, the job resets tracked files to `HEAD` and deletes untracked files. Ignored files stay, including installed dependency directories. A reused work directory would otherwise let a later add publish leftover edits. The merge check classifies the full pull-request diff against the default branch. It writes the routing decision in the job workspace. Why the hook does not classify is in [../lessons/from-hand-contracting.md](../lessons/from-hand-contracting.md).
+4. Deterministic gates run next, including when the decision is low. A gate failure fails the job before any hunter starts. The publish step still runs. The fixer finds no verdict and does not call an agent.
+5. When the decision is high, the selected hunters run at the same time. Each receives the ask, the gate report, and its own diff slice. None receives another hunter's report.
+6. Collate runs the comparison in [roles/collate.md](../roles/collate.md). It does not receive the diff. A failed comparison fails the job.
+7. The bounded fixer runs after collate even when collate failed. The editing agent follows [roles/fixer.md](../roles/fixer.md). Checkout cleaning, the affected-test command, and the commit are the job's procedure in Bounded fix below. A skip exits success and leaves a failed verdict failed.
+8. The job publishes the routing decision, and the verdict and fix report when those files exist, including when hunters stayed idle.
 
 An optional early run may send the staged tree through the same job. The ask on that run is the ask the implementer supplied. The merge check is the decision that gates merge. Pushing a review branch does not start a second run by itself.
 
@@ -62,14 +61,10 @@ The job does not commit a gate path or a secret (a path ending in `.env`, contai
 
 An optional early review stores a fail count at `.git/adversary-fail-count`. A pass sets it to 0. When the count is already 3, do not queue another run. Report the comparison and stop. The same tree and the same ask are not submitted twice.
 
-## Classify hook
+## Gate lock
 
-The hook implements [routing-policy.md](routing-policy.md) on the staged diff. It prints the decision. For a high decision it warns that the merge check will run the selected hunters. It appends one log line:
+The pre-commit hook refuses a commit when a staged path matches the manifest `gate_paths`. It then exits success. It does not classify the diff, write a routing file, or record a bypass. A human commits a gate change by skipping the hook once, after reviewing that change.
 
-```text
-<utc-time> tree=<tree> risk=<risk> signals=<signals> hunters=<hunters> bypass=<reason>
-```
+The merge check classifies the full pull-request diff. Why that classification is sufficient, and why the hook no longer classifies, is in [../lessons/from-hand-contracting.md](../lessons/from-hand-contracting.md).
 
-`ADVERSARY_BYPASS`, when set, is the bypass field. The hook still classifies and still refuses gate paths. The implementer does not write `.git/adversary-routing/` or `.git/adversary-verdicts/`.
-
-The agent process that runs a role keeps a real home directory. An empty home makes a file read hang until a long timeout.
+When `issue_tracker` is not null, the commit-message hook appends the trailer only when `list_in_progress` returns exactly one id and the message does not already contain that trailer. Several ids write nothing. The review job reads the trailer from the commit messages. It does not write the trailer. Scope and defects load the cited issue.

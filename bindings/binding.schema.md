@@ -19,8 +19,8 @@ The installer writes the binding inside the target project. Paths in the binding
 | `workflow_dir` | yes | Directory of the installed workflow text the roles link to. |
 | `manifest` | yes | Path of the filled project manifest. |
 | `invoke_role` | yes | Command or job line that passes one role file path to the agent. The path is an argument. It is not copied into a host-specific skill folder. |
-| `classify_hook.install` | yes | Command that points this clone at the classify hook. |
-| `classify_hook.entry` | yes | Path of the hook entry the installer wrote. The hook implements the classify-hook section of [../workflow/review-model.md](../workflow/review-model.md). |
+| `gate_hook.install` | yes | Command that points this clone at the gate hook. |
+| `gate_hook.entry` | yes | Path of the pre-commit hook the installer wrote. The hook implements the gate lock in [../workflow/review-model.md](../workflow/review-model.md). |
 | `agent_home` | yes | The review job must inherit a real home directory. It must not set the home directory to an empty directory. |
 
 `invoke_role` uses the token `{role}` for the role path. A review job replaces `{role}` with one of `roles/implementer.md`, `roles/report.md`, `roles/collate.md`, `roles/fixer.md`, or `roles/hunters/<id>.md` under `roles_dir`. Hunters also receive the ask, the gate report, and that hunter's slice. Collate does not receive the diff. The fixer receives the implementable majors, not a request to review.
@@ -37,7 +37,7 @@ roles_dir: adversary/roles
 workflow_dir: adversary/workflow
 manifest: adversary/project-manifest.md
 invoke_role: "review-agent --workspace . --manifest adversary/project-manifest.md --role {role}"
-classify_hook:
+gate_hook:
   install: "git config core.hooksPath adversary/hooks"
   entry: adversary/hooks/pre-commit
 agent_home: "inherit the invoking user's home directory; do not set it to an empty directory"

@@ -16,6 +16,6 @@ The kit is the upstream text. An install copies the role pack into the target an
 2. Name the target project and the file that project's agent host loads at session start. When the project has no such file, the installer creates `AGENTS.md`.
 3. Run the installer in [bootstrap/INSTALL.md](bootstrap/INSTALL.md). It writes only under the named project.
 
-The same role files are what every agent host executes. A host binding only records where that host reads session instructions, where the installed roles live, how a review job passes one role path to an agent, and how the classify hook is installed.
+The same role files are what every agent host executes. A host binding only records where that host reads session instructions, where the installed roles live, how a review job passes one role path to an agent, and how the gate hook is installed (`gate_hook` in [bindings/binding.schema.md](bindings/binding.schema.md)).
 
 Start with [AGENTS.md](AGENTS.md) when an assistant is reading this folder.

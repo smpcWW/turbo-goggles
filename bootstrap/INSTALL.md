@@ -6,7 +6,7 @@ type: agent
 
 # Install the review workflow
 
-You are installing the kit into one project. The kit stays the upstream text. You write a copy, a filled manifest, a binding, a short pointer, and a classify hook. You write only under the named project.
+You are installing the kit into one project. The kit stays the upstream text. You write a copy, a filled manifest, a binding, a short pointer, and a gate hook. You write only under the named project.
 
 Read [../workflow/project-manifest.schema.md](../workflow/project-manifest.schema.md), [../workflow/routing-policy.md](../workflow/routing-policy.md), [../workflow/review-model.md](../workflow/review-model.md), and [../bindings/binding.schema.md](../bindings/binding.schema.md) before you write. Do not read [../bindings/reference-cursor.md](../bindings/reference-cursor.md) to succeed. That map is not an input.
 
@@ -64,8 +64,8 @@ Write `<target>/adversary/binding.md` with the fields in the binding schema:
 - `workflow_dir` is `adversary/workflow`.
 - `manifest` is `adversary/project-manifest.md`.
 - `invoke_role` is the host command the operator names. It must pass `{role}` as a path under `adversary/roles/`. If the operator has not named a command, ask. Do not invent a vendor CLI.
-- `classify_hook.install` is `git config core.hooksPath adversary/hooks`.
-- `classify_hook.entry` is `adversary/hooks/pre-commit`.
+- `gate_hook.install` is `git config core.hooksPath adversary/hooks`.
+- `gate_hook.entry` is `adversary/hooks/pre-commit`.
 - `agent_home` states that the review job inherits a real home directory and must not set that directory empty.
 
 ## 4. Point the session entry at the implementer
@@ -82,14 +82,14 @@ Before you commit, follow `adversary/roles/implementer.md`. Do not load `adversa
 
 Do not paste hunter instructions into the entry file.
 
-## 5. Install the classify hook
+## 5. Install the gate hook
 
 Write `<target>/adversary/hooks/pre-commit` so that it:
 
-1. Refuses the commit when a staged path matches `gate_paths`. Tell the human to review that change and commit it by skipping the hook once. Do this before any bypass check. `ADVERSARY_BYPASS` must not get past this step.
-2. Classifies the staged diff with [../workflow/routing-policy.md](../workflow/routing-policy.md) and the manifest. Implement that policy here. Do not copy a script from the reference repository.
-3. Writes `.git/adversary-routing/<tree>.json` for `git write-tree`, prints the decision, warns on high risk, and appends the log line from the review model.
-4. Exits success for an ordinary commit, including a high-risk commit.
+1. Refuses the commit when a staged path matches `gate_paths`. Tell the human to review that change and commit it by skipping the hook once.
+2. Exits success for every other commit.
+
+The hook does not call `route-risk`, does not write a routing file, and does not record a bypass. The behavior is the gate lock in [../workflow/review-model.md](../workflow/review-model.md).
 
 When `issue_tracker` is not `null`, write `adversary/hooks/prepare-commit-msg` that appends the trailer only when `list_in_progress` returns exactly one id and the message does not already have that trailer. Several ids write nothing.
 
