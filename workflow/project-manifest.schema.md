@@ -16,7 +16,7 @@ The normative match rules are [routing-policy.md](routing-policy.md). This file 
 | --- | --- | --- |
 | `default_branch` | yes | The branch pull requests merge into. |
 | `tests.unit` | no | Command for the gate's required test check. Empty skips that check. |
-| `tests.affected` | no | Command the fixer runs before it commits. Empty means the fixer cannot commit. |
+| `tests.affected` | no | Command the review job runs after the editing agent exits. An empty command means the job cannot commit a fix. |
 | `tests.full` | no | Full-suite command. The review job does not have to run it. |
 | `accepted_decisions` | yes | Path to accepted decisions, or `none`. |
 | `active_scope` | yes | Path to the active scope document, or `none`. |
@@ -38,7 +38,7 @@ The normative match rules are [routing-policy.md](routing-policy.md). This file 
 | `kit_revision` | yes | Full git SHA of the kit that was copied. |
 | `optional_signals` | yes | `true` or `false` for each optional signal. Default `true`. |
 
-`issue_tracker`, when set, has `trailer` (a format string containing `{id}`), `id_pattern`, `list_in_progress` (a command that prints the in-progress ids), and `data_dir` (a directory omitted from routing and from hunter slices). The classify hook's commit-message companion writes the trailer only when that command returns exactly one id. Several ids are not guessed. One format a project may record is `Bead: {id}` with `data_dir` `.beads`. Leave the slot `null` when the project has no tracker.
+`issue_tracker`, when set, has `trailer` (a format string containing `{id}`), `id_pattern`, `list_in_progress` (a command that prints the in-progress ids), and `data_dir` (a directory omitted from routing and from hunter slices). The classify hook's commit-message companion writes the trailer only when that command returns exactly one id. Several ids are not guessed. One format a project may record is `Bead: {id}` with a `data_dir` for that tracker. Leave the slot `null` when the project has no tracker.
 
 `gates.forbidden_imports` entries have `path`, `pattern`, and `message`. Copy only rules the target already enforces.
 

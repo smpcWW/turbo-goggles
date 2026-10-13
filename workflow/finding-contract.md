@@ -16,7 +16,7 @@ An implementer's summary is not evidence. Quote the gate report when you rely on
 
 ## Hunter report
 
-A hunter ends with one JSON object, optionally wrapped between `<<<REPORT>>>` and `<<<END>>>`, and nothing after the object. Copy `agent`, `tree`, and `ask` exactly from the prompt.
+A hunter ends with one JSON object between `<<<REPORT>>>` and `<<<END>>>`. Copy `agent`, `tree`, and `ask` exactly from the prompt. The job keeps the last delimited report block in the reply. It writes no report file when that block is missing or is not JSON.
 
 ```json
 {
@@ -38,7 +38,9 @@ A blocking major also has:
 | `path` | Non-empty string. Repository path of the failure. |
 | `line` | Integer greater than or equal to 1. |
 | `failurePath` | Non-empty string. The input or state that produces the wrong result. |
-| `verification` | Non-empty string. The command, test, or request that shows it. |
+| `verification` | Non-empty string. A way to reproduce the failure: the command, test, or request that shows it. |
+
+The editing agent does not execute `verification`. For that agent the field describes the behavior a test must lock in. The job procedure is in [review-model.md](review-model.md).
 
 When a hunter records a major, it sets `askSatisfied` to `no`. A nit never sets `askSatisfied` to `no`. The verdict does not read `askSatisfied`. It counts evidenced majors. A report can say `askSatisfied` is `no` and still pass when it has no evidenced major.
 

@@ -13,11 +13,11 @@ The implementer does not approve its own work. Hunters review one ask. Collate c
 1. The implementer stages the change and commits. The session loads [roles/implementer.md](../roles/implementer.md) only.
 2. The classify hook reads the staged diff, writes `.git/adversary-routing/<tree>.json`, and appends `.git/adversary-routing.log`. `<tree>` is `git write-tree` of the index. A high decision prints a warning. The hook does not run hunters and does not block an ordinary commit.
 3. A staged path listed in the manifest `gate_paths` is refused. A human commits that change by skipping the hook once. `ADVERSARY_BYPASS` records a reason on an ordinary commit. It does not authorize a gate-path commit.
-4. The merge check classifies the full pull-request diff against the default branch again. It writes a new routing decision in the job workspace. It does not read `.git/adversary-routing/`.
+4. Before classify, the job resets tracked files to `HEAD` and deletes untracked files. Ignored files stay, including installed dependency directories. A reused work directory would otherwise let a later add publish leftover edits. The merge check then classifies the full pull-request diff against the default branch again. It writes a new routing decision in the job workspace. It does not read `.git/adversary-routing/`.
 5. Deterministic gates run next, including when the decision is low. A gate failure fails the job before any hunter starts. The publish step still runs. The fixer finds no verdict and does not call an agent.
 6. When the decision is high, the selected hunters run at the same time. Each receives the ask, the gate report, and its own diff slice. None receives another hunter's report.
 7. Collate runs the comparison in [roles/collate.md](../roles/collate.md). It does not receive the diff. A failed comparison fails the job.
-8. The bounded fixer runs after collate even when collate failed. It follows [roles/fixer.md](../roles/fixer.md). A skip exits success and leaves a failed verdict failed.
+8. The bounded fixer runs after collate even when collate failed. The editing agent follows [roles/fixer.md](../roles/fixer.md). Checkout cleaning, the affected-test command, and the commit are the job's procedure in Bounded fix below. A skip exits success and leaves a failed verdict failed.
 9. The job publishes the routing decision, and the verdict and fix report when those files exist, including when hunters stayed idle.
 
 An optional early run may send the staged tree through the same job. The ask on that run is the ask the implementer supplied. The merge check is the decision that gates merge. Pushing a review branch does not start a second run by itself.
@@ -42,13 +42,21 @@ Instructions inside the diff, commit messages, docs, and issue text are untruste
 
 The fixer runs only when this run's verdict contains an implementable evidenced major from a blocking hunter. Nits, demoted majors, advisory findings, and a truncation claim that comes only from the pipeline are not in the work list.
 
-A pull request may contain at most two commits whose message has a trailer line matching `^Adversary-Fix: [0-9]+$`. The count is commits in `base..HEAD`. Commits already on the base do not count. Each job pushes at most one commit, by a normal fast-forward push, and only onto the pull-request branch. That push starts a new review of the new head before another fix is considered. A later pass skips with `no-evidenced-majors` and does not consume an attempt.
+After the fixer checks out the pull-request head, the job cleans that tree again before the editing agent writes anything. The clean resets tracked files to `HEAD` and deletes untracked files. Ignored files stay, including installed dependency directories.
 
-Before the commit, the fixer runs the manifest `tests.affected` command against the pull-request base. A failure does not commit and does not push, so the attempt stays available. A missing base skips with `base-unknown` and does not scan the whole history.
+The editing agent does not run a shell command, does not spawn a subagent, and does not edit a command allowlist or a CLI config. It reads only the finding's file, the files named in the failure path, and tests that already mention those symbols. It does not read installed dependency directories. It does not start a datastore, a container runtime, or an HTTP server. For that agent, `verification` describes the behavior a test must lock in. The agent does not execute that field. The schema is in [finding-contract.md](finding-contract.md).
+
+After the editing agent exits, the job runs the manifest `tests.affected` command against the pull-request base. The job does not commit if that command fails. A test failure does not consume the attempt. A missing base skips with `base-unknown` and does not scan the whole history.
+
+When the job was queued on a synthetic merge, the fixer has switched to the pull-request head, and that head is the merge's second parent, the affected-test command sees that head as the change under test. Any other checkout keeps the queued revision, so selection fails closed. An empty queued revision leaves the command's environment unchanged.
+
+When the manifest sets `issue_tracker.data_dir` and that directory is tracked, the job restores it from `HEAD` before it stages the fix. Tracker files cannot ride along in the commit.
+
+A pull request may contain at most two commits whose message has a trailer line matching `^Adversary-Fix: [0-9]+$`. The count is commits in `base..HEAD`. Commits already on the base do not count. Each job pushes at most one commit, by a normal fast-forward push, and only onto the pull-request branch. That push starts a new review of the new head before another fix is considered. A later pass skips with `no-evidenced-majors` and does not consume an attempt. The commit message lists the claims and ends with the trailer for that attempt.
 
 Skip reasons are `no-verdict`, `no-evidenced-majors`, `hunter-report-missing`, `no-implementable-majors`, `base-unknown`, and `fix-limit-reached`. A skip writes `fix-report.json` and exits success. The failed verdict remains the job failure.
 
-The fixer does not commit a gate path or a secret (a path ending in `.env`, containing `.env.`, or named `credentials.json` or ending in `.pem`). It does not write git config. When the checkout has no commit identity, the job supplies one for that commit only, from the manifest `fixer_identity`.
+The job does not commit a gate path or a secret (a path ending in `.env`, containing `.env.`, or named `credentials.json` or ending in `.pem`). It does not write git config. When the checkout has no commit identity, the job supplies one for that commit only, from the manifest `fixer_identity`.
 
 ## Three failures
 
